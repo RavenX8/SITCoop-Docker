@@ -10,7 +10,7 @@ RUN apt-get update && \
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
 	apt-get install -y nodejs \
 	build-essential && \
-	node --version && \ 
+	node --version && \
 	npm --version && \
 	rm -rf /var/lib/apt/lists/*
 
@@ -25,6 +25,15 @@ ENV UID=99
 ENV GID=100
 ENV USER="sit"
 ENV DATA_PERM=770
+
+EXPOSE 6969/tcp
+EXPOSE 6969/udp
+EXPOSE 6970/tcp
+EXPOSE 6970/udp
+EXPOSE 6971/tcp
+EXPOSE 6971/udp
+EXPOSE 6972/tcp
+EXPOSE 6972/udp
 
 RUN mkdir $DATA_DIR && \
 	mkdir $SERVER_DIR && \

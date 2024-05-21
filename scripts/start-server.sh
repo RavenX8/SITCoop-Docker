@@ -1,35 +1,19 @@
 #!/bin/bash
 if [ ! -f ${SERVER_DIR}/Aki.Server.exe ]; then
-  echo "Aki.Server.exe not found, downloading version 3.7.6"
-  wget --content-disposition --quiet -O ${SERVER_DIR}/AkiServer.zip 'https://dev.sp-tarkov.com/attachments/d549e35d-998c-4986-8c78-64571a6e083c'
+  echo "Aki.Server.exe not found, downloading version 3.8.0"
+#  wget --content-disposition --quiet -O ${SERVER_DIR}/AkiServer.zip 'https://spt-releases.modd.in/SPT-3.8.3-29197-01783e2.7z'
+  wget --content-disposition --quiet -O ${SERVER_DIR}/AkiServer.zip 'https://github.com/stayintarkov/SIT.Aki-Server-Mod/releases/download/1.6.4/SITCoop-1.6.4-WithAki3.8.0-2dd4d9-win.zip'
   7za x ${SERVER_DIR}/AkiServer.zip -o${SERVER_DIR}/ -aoa -y -bsp0 -bso0
   rm ${SERVER_DIR}/AkiServer.zip -f
-
-elif [ -f ${SERVER_DIR}/Aki.Server.exe ]; then
-  ExifCommand="$(exiftool -ProductVersion ${SERVER_DIR}/Aki.Server.exe)"
-  if [[ "$ExifCommand" == *3.7.5* ]] && [ ${UPDATE} = true ]; then
-    echo "$ExifCommand version is installed, updating to 3.7.6"
-    echo "Archiving current SPT install to backup.tar"
-    tar --exclude "${SERVER_DIR}/WINE64" -cf ${SERVER_DIR}/backup.tar ${SERVER_DIR}/*
-    wget --content-disposition --quiet -O ${SERVER_DIR}/AkiServer.zip 'https://dev.sp-tarkov.com/attachments/d549e35d-998c-4986-8c78-64571a6e083c'
-    7za x ${SERVER_DIR}/AkiServer.zip -o${SERVER_DIR}/ -aoa -y -bsp0 -bso0
-    rm ${SERVER_DIR}/AkiServer.zip -f
-  fi
 fi
 
 if [ -f ${COOP_DIR}/package.json ]; then 
   SITCoopVersion=$(grep  '"version":' ${COOP_DIR}/package.json)
-  if [[ "$SITCoopVersion" != *1.5.1* ]] && [ ${UPDATE} = true ]; then
-    echo "$SITCoopVersion found, downloading 1.5.1"
-    wget --content-disposition --quiet -O ${SERVER_DIR}/user/mods/SITCoop.zip 'https://github.com/stayintarkov/SIT.Aki-Server-Mod/releases/download/1.5.1/SITCoop.zip'
-    7za x ${SERVER_DIR}/user/mods/SITCoop.zip -o${SERVER_DIR}/user/mods -aoa -y -bsp0 -bso0
-  fi
 elif [ ! -f ${COOP_DIR}/package.json ]; then
   echo "SITCoop not found, downloading"
   mkdir -p ${SERVER_DIR}/user/mods
-  wget --content-disposition --quiet -O ${SERVER_DIR}/user/mods/SITCoop.zip 'https://github.com/stayintarkov/SIT.Aki-Server-Mod/releases/download/1.5.1/SITCoop.zip'
+  wget --content-disposition --quiet -O ${SERVER_DIR}/user/mods/SITCoop.zip 'https://github.com/stayintarkov/SIT.Aki-Server-Mod/releases/download/1.6.4/SITCoop-1.6.4-WithAki3.8.0-2dd4d9-win.zip'
   7za x ${SERVER_DIR}/user/mods/SITCoop.zip -o${SERVER_DIR}/user/mods -aoa -y -bsp0 -bso0
-  # mv ${SERVER_DIR}/user/mods/SIT.Aki-Server-Mod-2023-12-04 ${COOP_DIR}
   mkdir ${COOP_DIR}/config
   rm ${SERVER_DIR}/user/mods/SITCoop.zip -f
 fi
@@ -48,7 +32,6 @@ if [ -f ${SERVER_DIR}/Aki_Data/Server/configs/http.json ]; then
   sed -i "s/[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}/${LOCAL_IP}/g" ${SERVER_DIR}/Aki_Data/Server/configs/http.json
 fi
 
-#export WINEARCH=win64
 export WINEPREFIX=/serverdata/serverfiles/WINE64
 export WINEDEBUG=-all
 echo "---Checking if WINE workdirectory is present---"
@@ -69,12 +52,23 @@ else
 fi
 
 chmod -R ${DATA_PERM} ${DATA_DIR}
+
+echo "---Checking for old logs---"
+find ${SERVER_DIR} -name "masterLog.*" -exec rm -f {} \;
+screen -wipe 2&>/dev/null
+
 echo "---Start Server---"
 
-if [ ! -f ${SERVER_DIR}/Aki.Server.exe ]; then
-  echo "---Something went wrong, can't find the executable, putting container into sleep mode!---"
-  sleep infinity
-else
-  cd ${SERVER_DIR}
-  NODE_SKIP_PLATFORM_CHECK=1 wine64 ${SERVER_DIR}/Aki.Server.exe
-fi
+cd ${SERVER_DIR}
+screen -S SITCoop -L -Logfile ${SERVER_DIR}/masterLog.0 -d -m NODE_SKIP_PLATFORM_CHECK=1 wine64 ${SERVER_DIR}/Aki.Server.exe
+screen -S watchdog -d -m /opt/scripts/start-watchdog.sh
+sleep 2
+tail -f ${SERVER_DIR}/masterLog.0
+
+#if [ ! -f ${SERVER_DIR}/Aki.Server.exe ]; then
+#  echo "---Something went wrong, can't find the executable, putting container into sleep mode!---"
+#  sleep infinity
+#else
+#  cd ${SERVER_DIR}
+#  NODE_SKIP_PLATFORM_CHECK=1 wine64 ${SERVER_DIR}/Aki.Server.exe
+#fi
