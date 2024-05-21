@@ -1,7 +1,6 @@
 #!/bin/bash
 if [ ! -f ${SERVER_DIR}/Aki.Server.exe ]; then
   echo "Aki.Server.exe not found, downloading version 3.8.0"
-#  wget --content-disposition --quiet -O ${SERVER_DIR}/AkiServer.zip 'https://spt-releases.modd.in/SPT-3.8.3-29197-01783e2.7z'
   wget --content-disposition --quiet -O ${SERVER_DIR}/AkiServer.zip 'https://github.com/stayintarkov/SIT.Aki-Server-Mod/releases/download/1.6.4/SITCoop-1.6.4-WithAki3.8.0-2dd4d9-win.zip'
   7za x ${SERVER_DIR}/AkiServer.zip -o${SERVER_DIR}/ -aoa -y -bsp0 -bso0
   rm ${SERVER_DIR}/AkiServer.zip -f
@@ -60,15 +59,7 @@ screen -wipe 2&>/dev/null
 echo "---Start Server---"
 
 cd ${SERVER_DIR}
-screen -S SITCoop -L -Logfile ${SERVER_DIR}/masterLog.0 -d -m NODE_SKIP_PLATFORM_CHECK=1 wine64 ${SERVER_DIR}/Aki.Server.exe
+screen -S SITCoop -L -Logfile ${SERVER_DIR}/masterLog.0 -d -m /opt/scripts/run-server.sh
 screen -S watchdog -d -m /opt/scripts/start-watchdog.sh
 sleep 2
 tail -f ${SERVER_DIR}/masterLog.0
-
-#if [ ! -f ${SERVER_DIR}/Aki.Server.exe ]; then
-#  echo "---Something went wrong, can't find the executable, putting container into sleep mode!---"
-#  sleep infinity
-#else
-#  cd ${SERVER_DIR}
-#  NODE_SKIP_PLATFORM_CHECK=1 wine64 ${SERVER_DIR}/Aki.Server.exe
-#fi
